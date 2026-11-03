@@ -1,0 +1,82 @@
+CREATE DATABASE IF NOT EXISTS barbearia_agenda
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE barbearia_agenda;
+
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    nome VARCHAR(120) NOT NULL,
+    email VARCHAR(160) NOT NULL,
+    senha_hash VARCHAR(255) NOT NULL,
+    cpf VARCHAR(11) NOT NULL,
+    nivel ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_users_email (email),
+    UNIQUE KEY uq_users_cpf (cpf)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS servicos (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    nome VARCHAR(120) NOT NULL,
+    descricao VARCHAR(500) NULL,
+    preco DECIMAL(10,2) NOT NULL,
+    duracao_minutos INT UNSIGNED NOT NULL,
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_servicos_nome (nome),
+    CONSTRAINT chk_servico_preco CHECK (preco >= 0),
+    CONSTRAINT chk_servico_duracao CHECK (duracao_minutos > 0)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS barbeiros (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    nome VARCHAR(120) NOT NULL,
+    bio VARCHAR(500) NULL,
+    ativo TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_barbeiros_nome (nome)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS horarios (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    data_horario DATE NOT NULL,
+    hora TIME NOT NULL,
+    barbeiro_id BIGINT UNSIGNED NOT NULL,
+    status ENUM('DISPONIVEL','BLOQUEADO','RESERVADO') NOT NULL DEFAULT 'DISPONIVEL',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_horario_data_hora (data_horario, hora),
+    KEY idx_horarios_data_status (data_horario, status),
+    CONSTRAINT fk_horarios_barbeiro FOREIGN KEY (barbeiro_id) REFERENCES barbeiros(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS agendamentos (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    usuario_id BIGINT UNSIGNED NOT NULL,
+    servico_id BIGINT UNSIGNED NOT NULL,
+    horario_id BIGINT UNSIGNED NOT NULL,
+    status ENUM('CONFIRMADO','CANCELADO','CONCLUIDO') NOT NULL DEFAULT 'CONFIRMADO',
+    observacoes VARCHAR(500) NULL,
+    preco_snapshot DECIMAL(10,2) NOT NULL,
+    servico_snapshot VARCHAR(120) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_agendamento_horario (horario_id),
+    KEY idx_agendamento_usuario (usuario_id),
+    CONSTRAINT fk_agendamento_usuario FOREIGN KEY (usuario_id) REFERENCES users(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_agendamento_servico FOREIGN KEY (servico_id) REFERENCES servicos(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_agendamento_horario FOREIGN KEY (horario_id) REFERENCES horarios(id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;

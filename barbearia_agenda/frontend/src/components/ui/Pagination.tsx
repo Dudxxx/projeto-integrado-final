@@ -1,0 +1,2 @@
+import { Button } from './Button';
+export function Pagination({page,totalPages,onChange}:{page:number;totalPages:number;onChange:(page:number)=>void}){if(totalPages<=1)return null;return <div className="pagination"><Button variant="secondary" disabled={page<=1} onClick={()=>onChange(page-1)}>Anterior</Button><span>Página {page} de {totalPages}</span><Button variant="secondary" disabled={page>=totalPages} onClick={()=>onChange(page+1)}>Próxima</Button></div>;}

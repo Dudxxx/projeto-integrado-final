@@ -1,0 +1,1 @@
+export function StatusBadge({value}:{value:string}){const cls=value==='CONFIRMADO'||value==='DISPONIVEL'||value==='CONCLUIDO'?'ok':value==='RESERVADO'?'gold':'danger';return <span className={`status ${cls}`}>{value}</span>;}

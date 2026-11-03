@@ -1,0 +1,57 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-barbearia_agenda}
+      MYSQL_USER: ${DB_USER:-barbearia}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-barbearia_dev}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_dev}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - barber_net
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:-troque-esta-chave-em-producao}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-2h}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-barbearia_agenda}
+      DB_USER: ${DB_USER:-barbearia}
+      DB_PASSWORD: ${DB_PASSWORD:-barbearia_dev}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - barber_net
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    networks:
+      - barber_net
+
+volumes:
+  mysql_data:
+
+networks:
+  barber_net:
+    driver: bridge
